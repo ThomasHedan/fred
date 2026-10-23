@@ -711,7 +711,9 @@ class DocumentAccessCapability(
             Call this to browse folders and document metadata before reading
             or summarizing a document. Each document leaf is a JSON record
             with uid, name, added_to_kb, created and modified. Available title,
-            format/MIME, language, page/row counts, labels and source are included.
+            format/MIME, language, page/row counts, size_bytes, labels, source and
+            ready (processing done: vector searchable, preview readable, sql
+            queryable with the tabular tools) are included.
 
             For the latest document added to Fred, compare added_to_kb timestamps.
             created is file creation metadata; modified can include Fred metadata

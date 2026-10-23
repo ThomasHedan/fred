@@ -24,6 +24,10 @@ place the user is already typing.
   draft. The existing tune badge and panel reflect it; nothing new is sent.
 - Keyboard follows the `/` menu: `Up`/`Down` move, `Enter`/`Tab` pick, `Esc`
   closes and leaves the text alone.
+- Each turn with a selection describes the picked documents to the model with
+  their `list_document_tree` record (name, folder, dates, type, size, pages or
+  rows, labels, processing stages done) instead of bare uids, so it can cite
+  them and pick the right tool. The record gains `size_bytes` and `ready`.
 - Knowledge Flow gains `POST /knowledge-flow/v1/documents/metadata/find`: the
   readable documents carrying one of the given library tags whose name contains
   a query, name-ordered, capped. The frontend client is regenerated.

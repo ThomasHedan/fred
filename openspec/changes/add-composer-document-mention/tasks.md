@@ -28,6 +28,12 @@
 - [x] 4.2 Add a migration note under `docs/swift/ops/migrations/` (impact: none, patch); verify with `make migration-check MIGRATION_BASE=origin/swift`.
   - Done: the fork carries no release tag, so `migration-check` cannot run here; the note passes the repo's `parse_note` (impact `none`). CI re-checks it.
 
+## 4b. Model-facing document records
+
+- [x] 4b.1 Add `size_bytes` and `ready` (processing stages done) to the `list_document_tree` record; verify with `test_projects_arrival_and_descriptive_metadata_without_confusing_file_creation`.
+- [x] 4b.2 Resolve the selected documents' records through `document_tree.tree(library_tag_ids=[], document_uids=...)` before composing the prompt (3 s, 8 000 chars, bare uids on failure or pruning), in both ReAct and Deep runtimes; verify with `test_describe_selected_documents_*` and `test_document_scope_suffix_lists_records_when_resolved`, and the full offline `fred-runtime` suite.
+- [x] 4b.3 Describe the records in `docs/swift/design/PROMPTS.md` and the `list_document_tree` docstring.
+
 ## 5. Verification
 
 - [x] 5.1 Run root `make code-quality` and the touched modules' `make test`; record counts in the PR.

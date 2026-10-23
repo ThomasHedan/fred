@@ -39,6 +39,9 @@ class DocLeaf:
     row_count: Optional[int] = None
     labels: List[str] = field(default_factory=list)
     source: Optional[str] = None
+    size_bytes: Optional[int] = None
+    # Processing stages done, which tell the model which tools can reach the document.
+    ready: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -139,7 +142,7 @@ def _format_leaf(doc: DocLeaf) -> str:
         "created": _timestamp(doc.created),
         "modified": _timestamp(doc.modified),
     }
-    for name in ("title", "file_type", "mime_type", "language", "page_count", "row_count", "labels", "source"):
+    for name in ("title", "file_type", "mime_type", "language", "page_count", "row_count", "size_bytes", "labels", "source", "ready"):
         value = getattr(doc, name)
         if value is not None and value != "" and value != []:
             record[name] = value

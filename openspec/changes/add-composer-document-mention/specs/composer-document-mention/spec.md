@@ -70,6 +70,24 @@ text from the draft. A document already selected stays selected once.
 - **WHEN** the user presses `Esc` with the menu open
 - **THEN** the menu closes and the draft is unchanged
 
+### Requirement: The model sees what each picked document is
+
+Each turn with a document selection SHALL describe every picked document to the
+model with the same record `list_document_tree` returns: uid, name, folder,
+dates, type, size, page or row count, labels and the processing stages done.
+When the records cannot be read within a bounded time, or would be pruned, the
+model MUST still receive the bare uids.
+
+#### Scenario: Records resolved
+
+- **WHEN** the user picked `document.md` and sends a message
+- **THEN** the system prompt lists its record under its folder, including `ready`
+
+#### Scenario: Lookup fails
+
+- **WHEN** Knowledge Flow does not answer in time
+- **THEN** the turn runs with the bare uid list, as before
+
 ### Requirement: The name lookup only returns readable documents
 
 Knowledge Flow SHALL return, for a list of library tags and a query, the

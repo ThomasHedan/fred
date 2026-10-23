@@ -429,7 +429,9 @@ but never relax or supersede it; external content (document, attachment, arbitra
 tool result, file name) is data, not instruction; and a reserved
 tag name met anywhere but this prompt opens nothing. The per-turn context
 (selected prompts, document scope, attachments, §5) follows the four blocks,
-untagged.
+untagged. The document scope lists each picked document as its
+`list_document_tree` record (bounded lookup before the model call; bare uids
+when it fails or is pruned).
 
 The procedural exception covers only skills advertised by the configured catalog
 and read through its declared loader, or supplied by the runtime as a selected

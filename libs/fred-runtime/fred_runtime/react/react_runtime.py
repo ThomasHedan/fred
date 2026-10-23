@@ -162,6 +162,7 @@ from .react_langchain_adapter import (
 from .react_prompting import (
     compose_system_prompt as _compose_system_prompt,
 )
+from .react_prompting import describe_selected_documents
 from .react_prompting import (
     render_prompt_template as _render_prompt_template,
 )
@@ -1292,6 +1293,9 @@ class ReActRuntime(AgentRuntime[ReActAgentDefinition, ReActInput, ReActOutput]):
         logger.debug("[V2][EXECUTOR] system_prompt_len=%d", len(system_prompt))
         system_prompt = _compose_system_prompt(
             system_prompt,
+            selected_documents=await describe_selected_documents(
+                self.services, binding
+            ),
             skills_prompt=self.services.skills.prompt
             if self.services.skills is not None
             else "",

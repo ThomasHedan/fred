@@ -4,7 +4,7 @@ title: "Pick a team document with @ in the chat composer"
 impact: none
 configuration: none
 configuration_reason: "New frontend path and an additive Knowledge Flow endpoint; no configuration keys or defaults change."
-no_action_reason: "The @ menu reuses the existing document selection and access checks; there is no data to migrate."
+no_action_reason: "The @ menu reuses the existing document selection and access checks, and the richer document records in the prompt are read from the existing tree endpoint; there is no data to migrate."
 ---
 
 ## Applicability

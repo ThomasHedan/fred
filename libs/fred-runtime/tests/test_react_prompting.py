@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from types import SimpleNamespace
-from typing import cast
+from typing import Any, cast
 
 import pytest
 from fred_runtime.capabilities.mcp import McpPromptGroup
@@ -26,6 +27,7 @@ from fred_runtime.react.react_prompting import (
     build_platform_prompt_prefix,
     compose_system_prompt,
     demote_markdown_headings,
+    describe_selected_documents,
     render_prompt_block,
 )
 from fred_runtime.react.react_tool_binding import (
@@ -645,6 +647,67 @@ def test_document_scope_suffix_names_the_selection() -> None:
     # A library pick unions with the document pick, so the suffix must not
     # claim the listed documents are all the tools can reach.
     assert "whole libraries" in suffix
+
+
+_RECORD = '{"folder":"Docs"}\n  {"uid":"u-1","name":"document.md","ready":["preview","vector"]}'
+
+
+def test_document_scope_suffix_lists_records_when_resolved() -> None:
+    suffix = build_document_scope_suffix(
+        _binding(selected_document_uids=["u-1"]), _RECORD
+    )
+
+    assert '"name":"document.md"' in suffix
+    assert "- u-1" not in suffix
+    assert "`ready`" in suffix
+    assert "NEVER repeat" in suffix
+
+
+class _Tree:
+    def __init__(self, result=None, error: Exception | None = None):
+        self.result, self.error, self.calls = result, error, []
+
+    async def tree(self, **kwargs):
+        self.calls.append(kwargs)
+        if self.error:
+            raise self.error
+        return self.result
+
+
+@pytest.mark.parametrize(
+    ("tree", "expected"),
+    [
+        (_Tree(SimpleNamespace(tree=_RECORD, truncated=False)), _RECORD),
+        (_Tree(SimpleNamespace(tree=_RECORD, truncated=True)), ""),
+        (_Tree(error=RuntimeError("kf down")), ""),
+        (None, ""),
+    ],
+)
+def test_describe_selected_documents_falls_back_to_bare_uids(tree, expected) -> None:
+    services = SimpleNamespace(document_tree=tree)
+    binding = _binding(selected_document_uids=["u-1"])
+
+    assert (
+        asyncio.run(describe_selected_documents(cast(Any, services), binding))
+        == expected
+    )
+    if tree is not None:
+        assert tree.calls[0]["library_tag_ids"] == []
+        assert tree.calls[0]["document_uids"] == ["u-1"]
+
+
+def test_describe_selected_documents_skips_the_call_without_a_selection() -> None:
+    tree = _Tree(SimpleNamespace(tree=_RECORD, truncated=False))
+
+    assert (
+        asyncio.run(
+            describe_selected_documents(
+                cast(Any, SimpleNamespace(document_tree=tree)), _binding()
+            )
+        )
+        == ""
+    )
+    assert tree.calls == []
 
 
 def test_document_scope_suffix_is_absent_without_a_selection() -> None:
