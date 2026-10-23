@@ -66,6 +66,12 @@ class BrowseDocumentsByTagRequest(BaseModel):
     )
 
 
+class FindDocumentsRequest(BaseModel):
+    tag_ids: List[str] = Field(..., max_length=500, description="Library tags to search in")
+    query: str = Field("", max_length=200, description="Case-insensitive substring of the document name")
+    limit: int = Field(20, gt=0, le=50)
+
+
 class TagSizesRequest(BaseModel):
     tag_ids: List[str] = Field(..., description="Library tag identifiers to total")
 
@@ -287,6 +293,19 @@ class MetadataController:
                 total,
             )
             return BrowseDocumentsResponse(documents=docs, total=total)
+
+        @router.post(
+            "/documents/metadata/find",
+            tags=["Documents"],
+            response_model=List[DocumentMetadata],
+            summary="Find readable documents by name in library tags",
+            description="Readable documents carrying one of `tag_ids` whose name contains `query` (case-insensitive), ordered by name, at most `limit`.",
+        )
+        async def find_documents(req: FindDocumentsRequest, user: KeycloakUser = Depends(get_current_user)):
+            try:
+                return await self.service.find_documents_in_tags(user, req.tag_ids, req.query, req.limit)
+            except Exception as e:
+                raise handle_exception(e)
 
         @router.post(
             "/documents/metadata/tag-sizes",
