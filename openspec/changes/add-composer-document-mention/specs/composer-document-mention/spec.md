@@ -49,6 +49,11 @@ address) MUST NOT open it.
 - **WHEN** no in-scope document matches the query
 - **THEN** the menu says so and `Enter` sends the message as usual
 
+#### Scenario: Results still loading
+
+- **WHEN** the user presses `Enter` before the matching documents are listed
+- **THEN** nothing is sent and the draft is unchanged
+
 ### Requirement: Picking a document selects it for the conversation
 
 Picking a document SHALL add it to the conversation's document selection, the

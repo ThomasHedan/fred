@@ -67,7 +67,7 @@ class BrowseDocumentsByTagRequest(BaseModel):
 
 
 class FindDocumentsRequest(BaseModel):
-    tag_ids: List[str] = Field(..., max_length=500, description="Library tags to search in")
+    tag_ids: List[str] = Field(..., max_length=10000, description="Library tags to search in")
     query: str = Field("", max_length=200, description="Case-insensitive substring of the document name")
     limit: int = Field(20, gt=0, le=50)
 

@@ -676,7 +676,7 @@ export default function ManagedChatPage() {
   // `@` picks a document into the conversation's selection, in the agent's scope.
   const mention = useDocumentMention({
     teamId,
-    chatControls: chat.executionDisabled ? [] : chat.chatControls,
+    documentScope: chat.executionDisabled ? undefined : documentScopeParams,
     input: chat.input,
     onDraftChange: commands.onComposerChange,
     selectedDocumentUids: chat.selectedDocumentUids,

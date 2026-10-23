@@ -81,7 +81,7 @@ async def test_unreadable_documents_are_skipped_and_limit_is_filled():
     assert "e.pdf" not in service.rebac.checked
 
 
-@pytest.mark.parametrize("body", [{"tag_ids": ["t"], "limit": 51}, {"tag_ids": ["t"], "query": "x" * 201}, {"tag_ids": ["t"] * 501}])
+@pytest.mark.parametrize("body", [{"tag_ids": ["t"], "limit": 51}, {"tag_ids": ["t"], "query": "x" * 201}, {"tag_ids": ["t"] * 10001}])
 def test_request_bounds(body):
     with pytest.raises(ValidationError):
         FindDocumentsRequest(**body)

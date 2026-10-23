@@ -16,7 +16,6 @@ import { useCallback, useEffect, useId, useState } from "react";
 import type { CommandKeyEvent, CommandTriggerBinding } from "@shared/molecules/RichInputField/RichInputField";
 import type { DocumentMentionMenuProps } from "@shared/molecules/DocumentMentionMenu/DocumentMentionMenu";
 import { useFrontendBootstrap } from "../../../../hooks/useFrontendBootstrap";
-import type { ChatControlDescriptor } from "../../../../slices/controlPlane/controlPlaneOpenApi";
 import {
   type DocumentMetadata,
   type TagType,
@@ -35,7 +34,8 @@ type SelectionRequest = NonNullable<CommandTriggerBinding["selectionRequest"]>;
  */
 export function useDocumentMention(params: {
   teamId: string;
-  chatControls: readonly ChatControlDescriptor[];
+  /** The agent's `document_scope` control params, absent when it exposes none. */
+  documentScope?: { documents?: boolean; bound_library_ids?: string[] | null };
   input: string;
   onDraftChange: (value: string) => void;
   selectedDocumentUids: string[];
@@ -46,12 +46,9 @@ export function useDocumentMention(params: {
   trigger: CommandTriggerBinding;
   menu: DocumentMentionMenuProps | null;
 } {
-  const { teamId, input, trigger: base } = params;
-  const scope = params.chatControls.find((control) => control.widget === "document_scope")?.params as
-    | { documents?: boolean; bound_library_ids?: string[] | null }
-    | undefined;
-  const enabled = scope?.documents === true;
-  const boundLibraryIds = scope?.bound_library_ids ?? [];
+  const { teamId, input, trigger: base, documentScope } = params;
+  const enabled = documentScope?.documents === true;
+  const boundLibraryIds = documentScope?.bound_library_ids ?? [];
 
   const menuId = useId();
   const [mention, setMention] = useState<{ query: string; range: Range } | null>(null);
@@ -68,7 +65,7 @@ export function useDocumentMention(params: {
   // Same arguments as DocumentLibraryScopePicker, so both read one cache entry.
   const { activeTeam } = useFrontendBootstrap();
   const isPersonalTeam = teamId === activeTeam?.id;
-  const { data: teamTags } = useListTagsQuery(
+  const { data: teamTags, isError: tagsFailed } = useListTagsQuery(
     {
       type: "document" as TagType,
       limit: 10000,
@@ -104,6 +101,7 @@ export function useDocumentMention(params: {
   const current = requestKey !== null && result?.key === requestKey ? result : undefined;
   const documents = current?.documents ?? [];
   const noLibrary = boundLibraryIds.length === 0 && teamTags?.length === 0;
+  const empty = noLibrary ? "noMatch" : tagsFailed || current?.error ? "error" : !current ? "loading" : "noMatch";
   const safeIndex = Math.min(activeIndex, Math.max(documents.length - 1, 0));
 
   const onQueryChange = useCallback((query: string | null, range?: Range) => {
@@ -134,12 +132,14 @@ export function useDocumentMention(params: {
     }
     if (count > 0 && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
       event.preventDefault();
-      setActiveIndex((safeIndex + (event.key === "ArrowDown" ? 1 : count - 1)) % count);
+      // The focus stops at either end, as in the `/` menu.
+      setActiveIndex(Math.max(0, Math.min(count - 1, safeIndex + (event.key === "ArrowDown" ? 1 : -1))));
       return true;
     }
-    if (count > 0 && (event.key === "Tab" || (event.key === "Enter" && !event.shiftKey))) {
+    // While the answer is on its way, Enter waits for it rather than sending the `@query`.
+    if ((count > 0 || empty === "loading") && (event.key === "Tab" || (event.key === "Enter" && !event.shiftKey))) {
       event.preventDefault();
-      pick(safeIndex);
+      if (count > 0) pick(safeIndex);
       return true;
     }
     return base.onKeyDown(event);
@@ -170,7 +170,7 @@ export function useDocumentMention(params: {
           id: menuId,
           documents,
           activeIndex: safeIndex,
-          empty: noLibrary ? "noMatch" : !current ? "loading" : current.error ? "error" : "noMatch",
+          empty,
           optionId,
           onActivate: pick,
           onFocusEntry: setActiveIndex,

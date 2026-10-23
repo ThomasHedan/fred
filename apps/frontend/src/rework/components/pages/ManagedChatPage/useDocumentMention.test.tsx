@@ -22,7 +22,6 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DocumentMentionMenu } from "@shared/molecules/DocumentMentionMenu/DocumentMentionMenu";
 import { RichInputField, type CommandTriggerBinding } from "@shared/molecules/RichInputField/RichInputField";
-import type { ChatControlDescriptor } from "../../../../slices/controlPlane/controlPlaneOpenApi";
 import { useDocumentMention } from "./useDocumentMention";
 
 declare global {
@@ -40,22 +39,24 @@ vi.mock("../../../../hooks/useFrontendBootstrap", () => ({
 
 const doc = (name: string) => ({ identity: { document_uid: `uid-${name}`, document_name: name } });
 const findDocuments = vi.fn();
+let tagsFailed = false;
 vi.mock("../../../../slices/knowledgeFlow/knowledgeFlowOpenApi", () => ({
   useListTagsQuery: (_args: unknown, options: { skip: boolean }) => ({
-    data: options.skip ? undefined : [{ id: "team-lib-1" }, { id: "team-lib-2" }],
+    data: options.skip || tagsFailed ? undefined : [{ id: "team-lib-1" }, { id: "team-lib-2" }],
+    isError: !options.skip && tagsFailed,
   }),
   useFindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostMutation: () => [findDocuments],
 }));
 
-const scope = (params: Record<string, unknown>) =>
-  [{ widget: "document_scope", params }] as unknown as ChatControlDescriptor[];
+type Scope = { documents?: boolean; bound_library_ids?: string[] };
+const scope = (params: Scope) => params;
 
 let container: HTMLDivElement;
 let root: Root;
 let selected: string[];
 const send = vi.fn();
 
-function Host({ chatControls, inline }: { chatControls: ChatControlDescriptor[]; inline?: boolean }) {
+function Host({ documentScope, inline }: { documentScope: Scope; inline?: boolean }) {
   const [input, setInput] = useState("");
   const [uids, setUids] = useState<string[]>([]);
   selected = uids;
@@ -69,7 +70,7 @@ function Host({ chatControls, inline }: { chatControls: ChatControlDescriptor[];
   };
   const mention = useDocumentMention({
     teamId: "team-1",
-    chatControls,
+    documentScope,
     input,
     onDraftChange: setInput,
     selectedDocumentUids: uids,
@@ -89,11 +90,11 @@ function Host({ chatControls, inline }: { chatControls: ChatControlDescriptor[];
   );
 }
 
-function render(chatControls: ChatControlDescriptor[], inline = false) {
+function render(documentScope: Scope, inline = false) {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
-  act(() => root.render(<Host chatControls={chatControls} inline={inline} />));
+  act(() => root.render(<Host documentScope={documentScope} inline={inline} />));
   if (!inline) act(() => textarea().focus());
 }
 
@@ -120,6 +121,7 @@ function press(key: string) {
 beforeEach(() => {
   vi.useFakeTimers();
   send.mockReset();
+  tagsFailed = false;
   findDocuments.mockReset();
   findDocuments.mockImplementation(() => ({
     unwrap: () => Promise.resolve([doc("a-rapport.pdf"), doc("b-rapport.pdf")]),
@@ -189,6 +191,25 @@ describe("useDocumentMention", () => {
     expect(view.state.doc.toString()).toBe("voir suite");
     expect(view.state.selection.main.head).toBe(5);
     expect(selected).toEqual(["uid-a-rapport.pdf"]);
+  });
+
+  it("holds Enter while the answer is loading instead of sending the query", async () => {
+    findDocuments.mockImplementation(() => ({ unwrap: () => new Promise(() => {}) }));
+    render(scope({ documents: true }));
+    await type("voir @rap");
+
+    press("Enter");
+
+    expect(send).not.toHaveBeenCalled();
+    expect(textarea().value).toBe("voir @rap");
+  });
+
+  it("says so when the team's libraries cannot be listed", async () => {
+    tagsFailed = true;
+    render(scope({ documents: true }));
+    await type("@rap");
+
+    expect(container.querySelector('[role="status"]')?.textContent).toBe("chatbot.documentMention.error");
   });
 
   it("closes on Escape and leaves the draft alone", async () => {

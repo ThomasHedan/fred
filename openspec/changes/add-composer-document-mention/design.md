@@ -27,7 +27,7 @@ session attachments.
 
 ### D1. One Knowledge Flow endpoint on existing store calls
 
-`POST /documents/metadata/find` takes `{tag_ids, query, limit}` (`tag_ids` 1-500,
+`POST /documents/metadata/find` takes `{tag_ids, query, limit}` (`tag_ids` up to 10 000, the tag listing's own ceiling,
 `query` up to 200 characters, `limit` 1-50, default 20) and returns
 `List[DocumentMetadata]`, the type `/search` already returns. The service calls
 `metadata_store.metadata_in_tags` (one indexed array-overlap query), keeps the
@@ -78,8 +78,8 @@ styles. The empty states are loading, error and no match.
 - [Large team corpora load every in-scope row's metadata per lookup] →
   debounce, plus a single indexed query. The SQL filter (D1, rejected
   alternative) is the follow-up if a team shows latency.
-- [ReBAC is checked on every name match, not only the first `limit`] → it is one
-  batched call, and a non-empty query narrows it quickly.
+- [Mostly unreadable matches make the read check walk many pages] → pages are
+  `limit` documents, checked in bounded batches, and stop once `limit` are found.
 - [Unbound agents fetch the team tag list on first `@`] → the list is the
   cached one the picker uses.
 
