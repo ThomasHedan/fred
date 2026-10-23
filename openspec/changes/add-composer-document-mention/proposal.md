@@ -1,6 +1,6 @@
 ## Why
 
-Tracking: no GitHub issue yet (to be created before implementation).
+Tracking: none yet - issues are disabled on this fork; link the upstream issue once opened.
 
 Pointing an agent at one team document today takes a detour: open the tune
 menu, open the document-scope panel, walk the library tree, tick the file,
