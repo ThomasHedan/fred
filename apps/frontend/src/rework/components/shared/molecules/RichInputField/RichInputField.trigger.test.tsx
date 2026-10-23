@@ -19,7 +19,7 @@
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { RichInputField, type CommandTriggerBinding } from "./RichInputField";
+import { RichInputField, mentionQueryOf, type CommandTriggerBinding } from "./RichInputField";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -34,7 +34,13 @@ vi.mock("react-i18next", () => ({
 let container: HTMLDivElement;
 let root: Root;
 
-function Host(props: { trigger?: CommandTriggerBinding; onSend: () => void; hint?: string; sendDisabled?: boolean }) {
+function Host(props: {
+  trigger?: CommandTriggerBinding;
+  onSend: () => void;
+  hint?: string;
+  sendDisabled?: boolean;
+  onMention?: (query: string | null, range?: { start: number; end: number }) => void;
+}) {
   const [value, setValue] = useState("");
   return (
     <RichInputField
@@ -45,6 +51,7 @@ function Host(props: { trigger?: CommandTriggerBinding; onSend: () => void; hint
       accessibleDescription={props.hint}
       commandTrigger={props.trigger}
       sendDisabled={props.sendDisabled}
+      onMentionQueryChange={props.onMention}
     />
   );
 }
@@ -240,5 +247,27 @@ describe("RichInputField hint", () => {
 
     expect(textarea().getAttribute("placeholder")).toBeNull();
     expect(textarea().getAttribute("aria-describedby")).toBeNull();
+  });
+});
+
+describe("RichInputField mention trigger", () => {
+  it.each([
+    ["@", 1, ""],
+    ["voir @rapp", 10, "rapp"],
+    ["voir @rapp suite", 10, "rapp"],
+    ["jean@example.com", 16, null],
+    ["voir @rapp suite", 16, null],
+  ])("finds the query in %j with the caret at %i", (value, caret, query) => {
+    expect(mentionQueryOf(value, caret)).toBe(query);
+  });
+
+  it("reports the query and its range to the host", () => {
+    const onMention = vi.fn();
+    render(<Host trigger={binding()} onSend={vi.fn()} onMention={onMention} />);
+
+    type("voir @ra");
+    expect(onMention).toHaveBeenLastCalledWith("ra", { start: 5, end: 8 });
+    type("voir @ra ");
+    expect(onMention).toHaveBeenLastCalledWith(null);
   });
 });

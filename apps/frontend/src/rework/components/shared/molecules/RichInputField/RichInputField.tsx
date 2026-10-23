@@ -88,6 +88,11 @@ export function commandQueryOf(
   return named !== undefined && inlineCommandNames.some((name) => name.includes(named.toLowerCase())) ? named : null;
 }
 
+/** The text typed after an `@` that starts a word and reaches the caret. */
+export function mentionQueryOf(value: string, caret = value.length): string | null {
+  return /(?:^|\s)@([^\s@]*)$/.exec(value.slice(0, caret))?.[1] ?? null;
+}
+
 interface RichInputFieldProps {
   value: string;
   onChange: (value: string) => void;
@@ -123,6 +128,9 @@ interface RichInputFieldProps {
    * text and the field behaves exactly as it always has.
    */
   commandTrigger?: CommandTriggerBinding;
+  /** Opt-in `@` trigger: the query after `@` at the caret, with its range. Keys
+   *  and combobox state still go through `commandTrigger`. */
+  onMentionQueryChange?: (query: string | null, range?: { start: number; end: number }) => void;
   /** Offered each key the command trigger did not consume, before Enter is
    *  handled. Return true to consume it — e.g. recalling sent messages. */
   onRecallKeyDown?: (event: CommandKeyEvent) => boolean;
@@ -180,6 +188,7 @@ export function RichInputField({
   inlineSkills,
   aboveFieldSlot,
   commandTrigger,
+  onMentionQueryChange,
   onRecallKeyDown,
   topSlot,
   leftSlot,
@@ -229,6 +238,16 @@ export function RichInputField({
         end: commandEnd,
       });
   }, [commandQuery, commandEnd]);
+
+  const mentionQuery = onMentionQueryChange ? mentionQueryOf(value, commandCaret) : null;
+  const mentionEnd = mentionQuery === null ? -1 : commandCaret;
+  const onMentionQueryChangeRef = useRef(onMentionQueryChange);
+  onMentionQueryChangeRef.current = onMentionQueryChange;
+  useEffect(() => {
+    if (mentionQuery === null) onMentionQueryChangeRef.current?.(null);
+    else
+      onMentionQueryChangeRef.current?.(mentionQuery, { start: mentionEnd - mentionQuery.length - 1, end: mentionEnd });
+  }, [mentionQuery, mentionEnd]);
 
   const selectionRequest = commandTrigger?.selectionRequest;
   const reportDraftReplacement = () => {

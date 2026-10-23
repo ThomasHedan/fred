@@ -255,6 +255,8 @@ vi.mock("../../../../security/KeycloakService", () => ({
 }));
 vi.mock("../../../../slices/knowledgeFlow/knowledgeFlowOpenApi", () => ({
   useTranscribeAudioKnowledgeFlowV1AudioTranscriptionsPostMutation: () => [() => ({ unwrap: async () => ({}) })],
+  useListTagsQuery: () => ({ data: undefined }),
+  useFindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostMutation: () => [() => ({ unwrap: async () => [] })],
 }));
 vi.mock("../../../core/hooks/useUploadWarningAcknowledgement", () => ({
   useUploadWarningAcknowledgement: () => ({ requiresAcknowledgement: false, acknowledge: () => undefined }),

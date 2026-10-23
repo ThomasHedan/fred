@@ -25,6 +25,7 @@ import { SessionTitleEditor } from "@shared/molecules/SessionTitleEditor/Session
 import SkillDetailPanel from "@shared/molecules/SkillDetailPanel/SkillDetailPanel";
 import CommandPromptPanel from "@shared/molecules/CommandPromptPanel/CommandPromptPanel";
 import { CommandMenu } from "@shared/molecules/CommandMenu/CommandMenu";
+import { DocumentMentionMenu } from "@shared/molecules/DocumentMentionMenu/DocumentMentionMenu";
 import { FullReasoningPanel } from "@shared/molecules/FullReasoningPanel/FullReasoningPanel";
 import { DebugRawDrawer } from "@shared/molecules/DebugRawDrawer/DebugRawDrawer";
 import { AttachmentChips } from "@shared/molecules/AttachmentChips/AttachmentChips";
@@ -60,6 +61,7 @@ import { useOutlineScrollSpy } from "../../../core/hooks/useOutlineScrollSpy";
 import { hitlHoldsComposer } from "./hitlHoldsComposer";
 import { useManagedChat } from "./useManagedChat";
 import { useComposerCommands } from "./useComposerCommands";
+import { useDocumentMention } from "./useDocumentMention";
 import type { ThreadMessage } from "@rework/types/thread";
 import { useComposerRecall } from "./useComposerRecall";
 import { useUploadWarningAcknowledgement } from "../../../core/hooks/useUploadWarningAcknowledgement";
@@ -671,6 +673,17 @@ export default function ManagedChatPage() {
       }),
   });
 
+  // `@` picks a document into the conversation's selection, in the agent's scope.
+  const mention = useDocumentMention({
+    teamId,
+    chatControls: chat.executionDisabled ? [] : chat.chatControls,
+    input: chat.input,
+    onDraftChange: commands.onComposerChange,
+    selectedDocumentUids: chat.selectedDocumentUids,
+    onSelectedDocumentUidsChange: chat.setSelectedDocumentUids,
+    trigger: commands.trigger,
+  });
+
   // A composer prompt token opens its own prompt; a second click closes it.
   const [fetchPromptPreview, promptPreview] = useLazyGetTeamPromptControlPlaneV1TeamsTeamIdPromptsPromptIdGetQuery();
   // One identity for every token and across keystrokes, so no token is
@@ -726,10 +739,15 @@ export default function ManagedChatPage() {
       accessibleDescription={t(chat.isReadOnly ? "chatbot.deletedAgentTooltip" : "chatbot.composerPlaceholder", {
         agentsNicknameSingular,
       })}
-      commandTrigger={commands.trigger}
+      commandTrigger={mention.trigger}
+      onMentionQueryChange={mention.onQueryChange}
       onRecallKeyDown={recallKeyDown}
       aboveFieldSlot={
-        !chat.executionDisabled && commands.menu ? <CommandMenu {...commands.menu} teamName={team?.name} /> : undefined
+        mention.menu ? (
+          <DocumentMentionMenu {...mention.menu} />
+        ) : !chat.executionDisabled && commands.menu ? (
+          <CommandMenu {...commands.menu} teamName={team?.name} />
+        ) : undefined
       }
       disabled={composerControlsDisabled}
       sendDisabled={composerControlsDisabled || chat.attachmentsUploading || chat.inputTooLong}
