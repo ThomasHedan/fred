@@ -45,6 +45,11 @@ instructed to say so.
 **General knowledge + documents** combines the enabled document sources with
 general knowledge. **General knowledge** skips document search.
 
+To point the agent at one team document, type **@** and part of its name in the
+message box, then pick it from the list. Only documents the agent can read are
+listed. The document joins the conversation's selection, shown in the documents
+panel.
+
 ## Choosing the model and reasoning
 
 The button to the right of the input field shows the language model that
