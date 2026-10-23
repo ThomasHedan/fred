@@ -25,6 +25,8 @@ from fred_core.documents.document_structures import (
     FileInfo,
     Identity,
     Processing,
+    ProcessingStage,
+    ProcessingStatus,
     SourceInfo,
     SourceType,
 )
@@ -207,6 +209,8 @@ async def test_projects_arrival_and_descriptive_metadata_without_confusing_file_
     late.file.language = "fr"
     late.file.page_count = 24
     late.labels = ["Architecture"]
+    late.file.file_size_bytes = 2048
+    late.processing.stages = {ProcessingStage.VECTORIZED: ProcessingStatus.DONE, ProcessingStage.SQL_INDEXED: ProcessingStatus.FAILED, ProcessingStage.PREVIEW_READY: ProcessingStatus.DONE}
     service = _tree_service(tags=[_tag(tag_id="docs", full_path="Docs", item_ids=["early", "late", "denied"])], docs=[early, late])
     response = await service.get_tree(_user(), DocumentTreeRequest())
     records = {record["uid"]: record for record in _records(response.tree)}
@@ -219,6 +223,9 @@ async def test_projects_arrival_and_descriptive_metadata_without_confusing_file_
     assert records["late"]["page_count"] == 24
     assert records["late"]["labels"] == ["Architecture"]
     assert records["late"]["source"] == "uploads"
+    assert records["late"]["size_bytes"] == 2048
+    assert records["late"]["ready"] == ["preview", "vector"]
+    assert "ready" not in records["early"]
     scoped = await service.get_tree(_user(), DocumentTreeRequest(document_uids=["early"]))
     assert "Platform design" not in scoped.tree
     assert "Architecture" not in scoped.tree

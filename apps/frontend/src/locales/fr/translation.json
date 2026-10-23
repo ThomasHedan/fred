@@ -419,6 +419,12 @@
       "runErrorStale": "La commande /{{command}} n'est plus disponible : son prompt a été supprimé ou renommé, ou elle vient d'un autre agent ou d'une autre équipe. Retirez-la de votre message et choisissez-la à nouveau.",
       "runErrorTooMany": "Un message peut contenir au plus {{limit}} commandes de prompt. Retirez-en quelques-unes, puis envoyez à nouveau."
     },
+    "documentMention": {
+      "ariaLabel": "Documents disponibles",
+      "loading": "Recherche des documents…",
+      "error": "Les documents n'ont pas pu être chargés. Tapez @ à nouveau pour réessayer.",
+      "noMatch": "Aucun document ne correspond."
+    },
     "composerPlaceholder": "Posez votre question, ou tapez / pour une commande",
     "newConversation": "Nouvelle conversation",
     "uiParts": {

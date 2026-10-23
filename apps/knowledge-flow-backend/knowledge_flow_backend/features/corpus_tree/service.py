@@ -17,6 +17,7 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 from fred_core import KeycloakUser
+from fred_core.documents.document_structures import ProcessingStatus
 
 from knowledge_flow_backend.features.corpus_tree.structure import DocumentTreeRequest, DocumentTreeResponse
 from knowledge_flow_backend.features.corpus_tree.tree_builder import DocLeaf, build_tree, prune_empty_folders, render_tree
@@ -141,6 +142,8 @@ class CorpusTreeService:
                 row_count=d.file.row_count,
                 labels=d.labels,
                 source=d.source.source_tag,
+                size_bytes=d.file.file_size_bytes,
+                ready=sorted(stage.value for stage, status in d.processing.stages.items() if status == ProcessingStatus.DONE),
             )
             for d in docs
         }

@@ -31,7 +31,9 @@ Example:
 
 from __future__ import annotations
 
+import asyncio
 import functools
+import logging
 import re
 from datetime import UTC, datetime
 
@@ -40,12 +42,19 @@ from fred_sdk.contracts.prompt_utils import (
     RESERVED_PROMPT_TAGS,
     escape_reserved_prompt_tags,
 )
+from fred_sdk.contracts.runtime import RuntimeServices
 
 from ..runtime_context import get_runtime_context_or_none
 
 # Matches only {simple_identifier} — same pattern as the validator so the two
 # surfaces stay in sync. Non-simple patterns ({}, {0}, {x.y}) are not touched.
 _SIMPLE_TOKEN_RE = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
+
+logger = logging.getLogger(__name__)
+
+# The record lookup runs before the model call: bounded, and never fatal.
+_SELECTED_DOCUMENTS_TIMEOUT_S = 3.0
+_SELECTED_DOCUMENTS_MAX_CHARS = 8_000
 
 
 def safe_prompt_token_map(
@@ -290,7 +299,33 @@ def build_attachment_context_suffix(
     )
 
 
-def build_document_scope_suffix(binding: BoundRuntimeContext) -> str:
+async def describe_selected_documents(
+    services: RuntimeServices, binding: BoundRuntimeContext
+) -> str:
+    """The selected documents as `list_document_tree` records under their
+    folders, or "" so the scope suffix falls back to bare uids."""
+
+    uids = binding.runtime_context.selected_document_uids
+    if not uids or services.document_tree is None:
+        return ""
+    try:
+        # An empty library scope keeps the listing to the selected documents.
+        result = await asyncio.wait_for(
+            services.document_tree.tree(
+                library_tag_ids=[],
+                document_uids=uids,
+                max_chars=_SELECTED_DOCUMENTS_MAX_CHARS,
+            ),
+            timeout=_SELECTED_DOCUMENTS_TIMEOUT_S,
+        )
+    except Exception:  # noqa: BLE001 - the bare uids still work
+        logger.warning("[V2][PROMPT] selected document records unavailable")
+        return ""
+    # A pruned listing would hide part of the selection: bare uids miss nothing.
+    return "" if result.truncated else result.tree
+
+
+def build_document_scope_suffix(binding: BoundRuntimeContext, records: str = "") -> str:
     """
     Tell the model that the user narrowed this turn to specific documents.
 
@@ -308,12 +343,22 @@ def build_document_scope_suffix(binding: BoundRuntimeContext) -> str:
     uids = binding.runtime_context.selected_document_uids
     if not uids:
         return ""
-    listed = escape_reserved_prompt_tags("\n".join(f"- {uid}" for uid in uids))
+    listed = escape_reserved_prompt_tags(
+        records or "\n".join(f"- {uid}" for uid in uids)
+    )
+    how_to_pass = (
+        "Each document is a JSON record under its folder, as `list_document_tree` "
+        "shows it: pass its `uid` as `document_uid`, and use `ready` (processing "
+        "done: `vector` searchable, `preview` readable, `sql` queryable with the "
+        "tabular tools) to pick the tool"
+        if records
+        else "Pass a listed value as `document_uid`"
+    )
     return (
         "\n\nThe user has picked the document(s) listed below for this turn. "
         'When they say "this document" or "the document", they mean one of '
-        "them - read it rather than asking which file they mean. Pass a listed "
-        "value as `document_uid`; these are internal working ids, so NEVER "
+        f"them - read it rather than asking which file they mean. {how_to_pass}; "
+        "these are internal working ids, so NEVER "
         "repeat one in your answer - refer to a document by its display name. "
         "The user may also have selected whole libraries, whose documents are "
         "in scope too and reachable through search and the document tree.\n\n"
@@ -430,6 +475,7 @@ def compose_system_prompt(
     tool_suffix: str = "",
     skills_prompt: str = "",
     tabular_tools_available: bool,
+    selected_documents: str = "",
 ) -> str:
     """
     Assemble the system prompt shared by the ReAct and Deep runtimes.
@@ -485,7 +531,7 @@ def compose_system_prompt(
     )
     per_turn = (
         build_context_prompt_suffix(binding, agent_id=agent_id),
-        build_document_scope_suffix(binding),
+        build_document_scope_suffix(binding, selected_documents),
         build_attachment_context_suffix(
             binding, tabular_tools_available=tabular_tools_available
         ),

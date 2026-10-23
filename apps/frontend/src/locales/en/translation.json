@@ -419,6 +419,12 @@
       "runErrorStale": "The /{{command}} command is no longer available: its prompt was deleted or renamed, or it comes from another agent or team. Remove it from your message and choose it again.",
       "runErrorTooMany": "A message can hold at most {{limit}} prompt commands. Remove a few, then send again."
     },
+    "documentMention": {
+      "ariaLabel": "Available documents",
+      "loading": "Searching documents…",
+      "error": "Documents could not be loaded. Type @ again to retry.",
+      "noMatch": "No matching document."
+    },
     "composerPlaceholder": "Ask your question, or type / for a command",
     "newConversation": "New conversation",
     "uiParts": {

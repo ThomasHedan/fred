@@ -47,6 +47,11 @@ reçoit la consigne de le signaler.
 activées et les connaissances générales. **Connaissances générales** ne lance
 pas de recherche documentaire.
 
+Pour viser un document précis de l'équipe, tapez **@** suivi d'une partie de son
+nom dans la zone de saisie, puis choisissez-le dans la liste. Seuls les
+documents que l'agent peut consulter y figurent. Le document rejoint la
+sélection de la conversation, visible dans le panneau des documents.
+
 ## Choisir le modèle et le raisonnement
 
 Le bouton à droite du champ de saisie indique le modèle de langage qui répond.

@@ -221,6 +221,23 @@ class MetadataService:
         authorized_doc_ids = await self.filter_readable_document_uids(user, [doc.document_uid for doc in docs])
         return [d for d in docs if d.identity.document_uid in authorized_doc_ids]
 
+    async def find_documents_in_tags(self, user: KeycloakUser, tag_ids: list[str], query: str, limit: int) -> list[DocumentMetadata]:
+        """Readable documents of `tag_ids` whose name contains `query`, by name.
+
+        Read access is checked one page at a time, so an empty query on a large
+        corpus stops once `limit` readable documents are found."""
+        needle = query.casefold()
+        docs = await self.metadata_store.metadata_in_tags(tag_ids) if tag_ids else []
+        matches = sorted((d for d in docs if needle in d.document_name.casefold()), key=lambda d: d.document_name.casefold())
+        found: list[DocumentMetadata] = []
+        for start in range(0, len(matches), limit):
+            page = matches[start : start + limit]
+            readable = await self.filter_readable_document_uids(user, [d.document_uid for d in page])
+            found += [d for d in page if d.document_uid in readable]
+            if len(found) >= limit:
+                break
+        return found[:limit]
+
     async def get_document_metadata(self, user: KeycloakUser, document_uid: str) -> DocumentMetadata:
         if not document_uid:
             raise InvalidMetadataRequest("Document UID cannot be empty")

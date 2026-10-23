@@ -1512,6 +1512,12 @@ inline popover into a full-height right-side push panel (#2259).
   (`hasPonctualDocumentScope`: a non-empty document selection, or — for unbound agents — a
   non-empty library selection), signalling the agent's resource access is narrowed for this
   conversation.
+- **`@` mention (2026-10-23)**: typing `@` at a word boundary in the composer opens
+  `DocumentMentionMenu` (the `/` menu's look, `CommandMenu.module.css`) over the team documents
+  the agent can query — offered only when `document_scope.documents` is true, limited to
+  `bound_library_ids` when set. Picking one adds it to the same document selection this panel
+  edits and removes the `@query` text; no chip is shown, the tune badge and panel reflect it.
+  Logic in `useDocumentMention`; names come from `POST /documents/metadata/find`.
 
 ---
 

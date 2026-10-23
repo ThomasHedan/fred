@@ -75,6 +75,7 @@ from fred_runtime.react.react_model_adapter import extract_model_name_from_objec
 from fred_runtime.react.react_prompting import (
     compose_system_prompt as _compose_system_prompt,
 )
+from fred_runtime.react.react_prompting import describe_selected_documents
 from fred_runtime.react.react_prompting import (
     render_prompt_template as _render_prompt_template,
 )
@@ -243,6 +244,7 @@ class DeepAgentRuntime(ReActRuntime):
         )
         system_prompt = _compose_system_prompt(
             system_prompt,
+            selected_documents=await describe_selected_documents(services, binding),
             binding=binding,
             agent_id=self.definition.agent_id,
             tool_suffix="\n\n".join(

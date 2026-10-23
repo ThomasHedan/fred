@@ -173,6 +173,21 @@ const injectedRtkApi = api.injectEndpoints({
         },
       }),
     }),
+    findDocumentsKnowledgeFlowV1DocumentsMetadataFindPost: build.mutation<
+      FindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostApiResponse,
+      FindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostApiArg
+    >({
+      query: (queryArg) => ({
+        url: `/knowledge-flow/v1/documents/metadata/find`,
+        method: "POST",
+        body: queryArg.findDocumentsRequest,
+        params: {
+          person: queryArg.person,
+          run: queryArg.run,
+          agent: queryArg.agent,
+        },
+      }),
+    }),
     tagSizesKnowledgeFlowV1DocumentsMetadataTagSizesPost: build.mutation<
       TagSizesKnowledgeFlowV1DocumentsMetadataTagSizesPostApiResponse,
       TagSizesKnowledgeFlowV1DocumentsMetadataTagSizesPostApiArg
@@ -1619,6 +1634,14 @@ export type BrowseDocumentsByTagKnowledgeFlowV1DocumentsMetadataBrowsePostApiArg
   agent?: string | null;
   browseDocumentsByTagRequest: BrowseDocumentsByTagRequest;
 };
+export type FindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostApiResponse =
+  /** status 200 Successful Response */ DocumentMetadata[];
+export type FindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostApiArg = {
+  person?: string | null;
+  run?: string | null;
+  agent?: string | null;
+  findDocumentsRequest: FindDocumentsRequest;
+};
 export type TagSizesKnowledgeFlowV1DocumentsMetadataTagSizesPostApiResponse =
   /** status 200 Successful Response */ TagSizesResponse;
 export type TagSizesKnowledgeFlowV1DocumentsMetadataTagSizesPostApiArg = {
@@ -2796,6 +2819,13 @@ export type BrowseDocumentsByTagRequest = {
   /** Ascending or descending. Missing values sort last ascending, first descending. */
   sort_order?: "asc" | "desc";
 };
+export type FindDocumentsRequest = {
+  /** Library tags to search in */
+  tag_ids: string[];
+  /** Case-insensitive substring of the document name */
+  query?: string;
+  limit?: number;
+};
 export type TagSizesResponse = {
   /** Total document bytes per requested tag id (0 when unknown/empty) */
   sizes: {
@@ -3454,6 +3484,7 @@ export const {
   useUpdateDocumentMetadataTitleKnowledgeFlowV1DocumentMetadataDocumentUidTitlePutMutation,
   useRenameDocumentKnowledgeFlowV1DocumentMetadataDocumentUidNamePutMutation,
   useBrowseDocumentsByTagKnowledgeFlowV1DocumentsMetadataBrowsePostMutation,
+  useFindDocumentsKnowledgeFlowV1DocumentsMetadataFindPostMutation,
   useTagSizesKnowledgeFlowV1DocumentsMetadataTagSizesPostMutation,
   useMutateDocumentLabelsMutation,
   useAddDocumentLabelMutation,
