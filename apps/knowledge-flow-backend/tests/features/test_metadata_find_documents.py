@@ -18,7 +18,6 @@ from types import SimpleNamespace
 
 import pytest
 from fred_core.documents.document_structures import DocumentMetadata, Identity, SourceInfo, SourceType, Tagging
-
 from pydantic import ValidationError
 
 from knowledge_flow_backend.features.metadata.controller import FindDocumentsRequest
@@ -29,7 +28,7 @@ USER = SimpleNamespace(uid="reader")
 
 
 class _Rebac:
-    def __init__(self, denied: set[str] = frozenset()):
+    def __init__(self, denied: frozenset[str] = frozenset()):
         self.denied = denied
         self.checked: list[str] = []
 
@@ -38,7 +37,7 @@ class _Rebac:
         return uid not in self.denied
 
 
-async def _service(names: list[str], tag_ids=("lib-a",), denied: set[str] = frozenset()) -> MetadataService:
+async def _service(names: list[str], tag_ids=("lib-a",), denied: frozenset[str] = frozenset()) -> MetadataService:
     store = _InMemoryTestMetadataStore()
     for name in names:
         await store.save_metadata(
